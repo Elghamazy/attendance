@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <title>Student Attendance Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+        label {
+            margin-right: 10px;
+        }
+        select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        input[type="checkbox"] {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Student Attendance Tracker</h1>
+
+<!-- Dropdown Menus -->
+<label for="collectionSelect">اختر مجموعة:</label>
+<select id="collectionSelect">
+    <option value="مجموعة محمد أيمن">مجموعة محمد أيمن</option>
+    <option value="مجموعة رابعه ابتدائي">مجموعة رابعه ابتدائي</option>
+    <option value="مجموعة الصف الثالث">مجموعة الصف الثالث</option>
+    <option value="مجموعة الصف الثاني الابتدائي">مجموعة الصف الثاني الابتدائي</option>
+    <option value="مجموعة الصف السادس الابتدائي">مجموعة الصف السادس الابتدائي</option>
+    <option value="مجموعة الصف الأول الأعدادي">مجموعة الصف الأول الأعدادي</option>
+</select>
+<br>
+<label for="monthSelect">اختر شهر:</label>
+<select id="monthSelect">
+    <option value="يناير">يناير</option>
+    <option value="فبراير">فبراير</option>
+    <option value="مارس">مارس</option>
+    <option value="أبريل">أبريل</option>
+    <option value="مايو">مايو</option>
+    <option value="يونيو">يونيو</option>
+    <option value="يوليو">يوليو</option>
+    <option value="أغسطس">أغسطس</option>
+    <option value="سبتمبر">سبتمبر</option>
+    <option value="أكتوبر">أكتوبر</option>
+    <option value="نوفمبر">نوفمبر</option>
+    <option value="ديسمبر">ديسمبر</option>
+</select>
+
+<table id="attendanceTable">
+    <thead>
+        <tr>
+            <th>اسم الطالب</th>
+            <th>محاضرة 1</th>
+            <th>محاضرة 2</th>
+            <th>محاضرة 3</th>
+            <th>محاضرة 4</th>
+            <th>محاضرة 5</th>
+            <th>محاضرة 6</th>
+            <th>محاضرة 7</th>
+            <th>محاضرة 8</th>
+        </tr>
+    </thead>
+    <tbody id="studentRows">
+    </tbody>
+</table>
+
+<script>
+    // Collection of students by group
+    const collections = {
+        "مجموعة محمد أيمن": ["زياد هشام", "زياد مؤمن", "محمد ايمن", "ادم صالح", "ادم اشراقه"],
+        "مجموعة رابعه ابتدائي": ["تسنيم", "اسامه"],
+        "مجموعة الصف الثالث": ["عمر", "حمزه"],
+        "مجموعة الصف الثاني الابتدائي": ["سفيان"],
+        "مجموعة الصف السادس الابتدائي": ["انس", "محمد"],
+        "مجموعة الصف الأول الأعدادي": ["ريتال", "اياد مؤمن"]
+    };
+
+    // Number of lectures per month
+    const numLectures = 8;
+
+    // Load attendance data from local storage
+    function loadAttendanceData(month, collection) {
+        return JSON.parse(localStorage.getItem(`${month}-${collection}`)) || {};
+    }
+
+    // Save attendance data to local storage
+    function saveAttendanceData(month, collection, data) {
+        localStorage.setItem(`${month}-${collection}`, JSON.stringify(data));
+    }
+
+    // Create the table dynamically based on the selected month and collection
+    function createAttendanceTable(month, collection) {
+        const tbody = document.getElementById('studentRows');
+        const attendanceData = loadAttendanceData(month, collection);
+        const students = collections[collection] || [];
+
+        // Clear the table body
+        tbody.innerHTML = '';
+
+        students.forEach((student) => {
+            const row = document.createElement('tr');
+
+            // Create student name cell
+            const nameCell = document.createElement('td');
+            nameCell.textContent = student;
+            row.appendChild(nameCell);
+
+            // Create lecture checkboxes
+            for (let lectureIndex = 0; lectureIndex < numLectures; lectureIndex++) {
+                const cell = document.createElement('td');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+
+                // Load the saved state of the checkbox
+                const attendanceKey = `${student}-${lectureIndex}`;
+                if (attendanceData[attendanceKey]) {
+                    checkbox.checked = true;
+                }
+
+                // Update local storage on change
+                checkbox.addEventListener('change', () => {
+                    attendanceData[attendanceKey] = checkbox.checked;
+                    saveAttendanceData(month, collection, attendanceData);
+                });
+
+                cell.appendChild(checkbox);
+                row.appendChild(cell);
+            }
+
+            tbody.appendChild(row);
+        });
+    }
+
+    // Handle collection change
+    document.getElementById('collectionSelect').addEventListener('change', (event) => {
+        const selectedCollection = event.target.value;
+        const selectedMonth = document.getElementById('monthSelect').value;
+        createAttendanceTable(selectedMonth, selectedCollection);
+    });
+
+    // Handle month change
+    document.getElementById('monthSelect').addEventListener('change', (event) => {
+        const selectedMonth = event.target.value;
+        const selectedCollection = document.getElementById('collectionSelect').value;
+        createAttendanceTable(selectedMonth, selectedCollection);
+    });
+
+    // Initialize the table with the default month and collection on page load
+    window.onload = () => {
+        const defaultCollection = document.getElementById('collectionSelect').value;
+        const defaultMonth = document.getElementById('monthSelect').value;
+        createAttendanceTable(defaultMonth, defaultCollection);
+    };
+</script>
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                })
+                .catch(error => {
+                    console.error('Service Worker registration failed:', error);
+                });
+        });
+    }
+</script>
+</body>
+</html>
